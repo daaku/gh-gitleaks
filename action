@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+shopt -s dotglob nullglob
+trap 'echo "${0} line ${LINENO} Status: ${?}"' ERR
+
+URL=$(curl -fsSL "https://api.github.com/repos/gitleaks/gitleaks/releases/latest" |
+  grep -m 1 "browser_download_url.*linux_x64.tar.gz" |
+  cut -d ":" -f 2,3 |
+  tr -d ' "')
+
+curl -fsSL "$URL" | tar -xz -C /usr/local/bin gitleaks
+gitleaks dir

@@ -1,0 +1,7 @@
+name: gitleaks
+description: Run gitleaks to not leak secrets
+runs:
+  using: composite
+  steps:
+    - run: ${{ github.action_path }}/action
+      shell: bash
