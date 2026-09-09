@@ -10,4 +10,4 @@ URL=$(curl -fsSL "https://api.github.com/repos/gitleaks/gitleaks/releases/latest
   tr -d ' "')
 
 curl -fsSL "$URL" | tar -xz -C /usr/local/bin gitleaks
-gitleaks dir
+gitleaks dir --redact=50 --report-format csv --report-path -
