@@ -1,17 +1,18 @@
 name: gitleaks
 description: Run gitleaks to not leak secrets
+inputs:
+  version:
+    description: gitleaks version to use, defaults to the latest release
+    required: false
 runs:
   using: composite
   steps:
-    - id: version
-      run: ${{ github.action_path }}/action version
-      shell: bash
     - uses: actions/cache@v6
       with:
         path: ${{ runner.tool_cache }}/gitleaks
-        key: gitleaks-${{ steps.version.outputs.version }}-${{ runner.os }}-${{ runner.arch }}
+        key: gitleaks-${{ inputs.version || 'latest' }}-${{ runner.os }}-${{ runner.arch }}
     - run: ${{ github.action_path }}/action
       shell: bash
       env:
-        GITLEAKS_URL: ${{ steps.version.outputs.url }}
         GITLEAKS_DIR: ${{ runner.tool_cache }}/gitleaks
+        GITLEAKS_VERSION: ${{ inputs.version }}
