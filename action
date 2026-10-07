@@ -1,13 +1,39 @@
 #!/usr/bin/env bash
 
+# Run with no argument to install gitleaks (if it is not already present) and
+# scan the repository. Run with "version" to emit the latest release version
+# and its download URL as step outputs, which the action uses to key the cache.
+
 set -euo pipefail
-shopt -s dotglob nullglob
 trap 'echo "${0} line ${LINENO} Status: ${?}"' ERR
 
-URL=$(curl -fsSL "https://api.github.com/repos/gitleaks/gitleaks/releases/latest" |
-  grep -m 1 "browser_download_url.*linux_x64.tar.gz" |
-  cut -d ":" -f 2,3 |
-  tr -d ' "')
+GITLEAKS_DIR=${GITLEAKS_DIR:-${RUNNER_TOOL_CACHE:-$HOME/.cache}/gitleaks}
+GITLEAKS_BIN=${GITLEAKS_DIR}/gitleaks
 
-curl -fsSL "$URL" | tar -xz -C /usr/local/bin gitleaks
-gitleaks dir --redact=50 --report-format csv --report-path -
+gitleaks_url() {
+  curl -fsSL "https://api.github.com/repos/gitleaks/gitleaks/releases/latest" |
+    grep -m 1 "browser_download_url.*linux_x64.tar.gz" |
+    cut -d ":" -f 2,3 |
+    tr -d ' "'
+}
+
+case ${1:-} in
+version)
+  url=$(gitleaks_url)
+  file=${url##*/} # gitleaks_8.30.1_linux_x64.tar.gz
+  file=${file#gitleaks_}
+  {
+    echo "version=${file%%_linux*}"
+    echo "url=$url"
+  } >>"${GITHUB_OUTPUT:-/dev/stdout}"
+  ;;
+*)
+  if [[ ! -x $GITLEAKS_BIN ]]; then
+    mkdir -p "$GITLEAKS_DIR"
+    curl -fsSL "${GITLEAKS_URL:-$(gitleaks_url)}" |
+      tar -xz -C "$GITLEAKS_DIR" gitleaks
+    chmod +x "$GITLEAKS_BIN"
+  fi
+  "$GITLEAKS_BIN" dir --redact=50 --report-format csv --report-path -
+  ;;
+esac
